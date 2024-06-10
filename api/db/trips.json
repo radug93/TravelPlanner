@@ -1,0 +1,11 @@
+{
+  "trips": [
+    {
+      "id": 1,
+      "name": "Paris",
+      "country": "France",
+      "startDate": "2024-06-10",
+      "endDate": "2024-06-14"
+    }
+  ]
+}
