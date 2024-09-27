@@ -3,46 +3,71 @@ const jsonServer = require('json-server');
 const path = require('path');
 const fs = require('fs');
 const bodyParser = require('body-parser');
-const app = express();
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 const middlewares = jsonServer.defaults();
-const getDb = () => {
-    const trips = JSON.parse(fs.readFileSync(path.join(__dirname, 'db', 'trips.json')));
-  
-    return {
-      ...trips,
-    };
-  };
 
+const app = express();
 const router = jsonServer.router(getDb());
 const dbFilePath = path.join(__dirname, 'db.json');
 
+// Load the trip routes
+const tripRoutes = require('./paths/trips');
+
+// Middleware setup
 app.use(bodyParser.json());
-const saveDb = (db) => {
-    fs.writeFileSync(dbFilePath, JSON.stringify(db, null, 2));
-  };
-app.post('/api/trips', (req, res, next) => {
-    console.log(req.body)
-    if (!req.body.name || !req.body.country) {
-      return res.status(400).json({ error: 'Name and country are required fields' });
-    }
-
-    if (!req.body.startDate || !req.body.endDate) {
-        return res.status(400).json({ error: 'Start date and end date are required fields' });
-      }
-    // Additional validation logic can be added here
-    next();
-  });
-
-
-  router.render = (req, res) => {
-    const db = router.db.getState();
-    saveDb(db);
-    res.jsonp(res.locals.data);
-  };
-  
 app.use(middlewares);
+
+// Define the trip routes
+app.use('/api/trips', tripRoutes);
+
+// Swagger options
+const options = {
+  definition: {
+    openapi: "3.1.0",
+    info: {
+      title: 'Trip API',
+      version: '1.0.0',
+    },
+    servers: [
+      {
+        url: "http://localhost:3000",
+      },
+    ],
+  },
+  apis: ["./paths/*.js"],  // Swagger will scan the routes folder for API documentation
+};
+
+// Initialize Swagger docs
+const specs = swaggerJsdoc(options);
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(specs, { explorer: true })
+);
+
+// Function to fetch database
+function getDb() {
+  const trips = JSON.parse(fs.readFileSync(path.join(__dirname, 'db', 'trips.json')));
+  return { ...trips };
+}
+
+// Save database after each change
+function saveDb(db) {
+  fs.writeFileSync(dbFilePath, JSON.stringify(db, null, 2));
+}
+
+// Custom router render function
+router.render = (req, res) => {
+  const db = router.db.getState();
+  saveDb(db);
+  res.jsonp(res.locals.data);
+};
+
+// Use JSON Server router
 app.use('/api', router);
 
+// Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}/api`);

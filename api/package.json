@@ -11,6 +11,9 @@
   "description": "",
   "dependencies": {
     "express": "^4.17.1",
-    "json-server": "^0.17.0"
+    "express-list-endpoints": "^7.1.0",
+    "json-server": "^0.17.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   }
 }
